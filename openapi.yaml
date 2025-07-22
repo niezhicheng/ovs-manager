@@ -1,0 +1,803 @@
+openapi: 3.0.0
+info:
+  title: OVS 管理平台 API
+  version: 1.0.0
+  description: |-
+    Open vSwitch 管理平台后端 API，涵盖交换机、端口、Bond、流表、镜像、QoS、隧道、BFD、CFM、组播、STP/RSTP、NetFlow/sFlow/IPFIX、网络命名空间等全部常用与高级功能。
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/ovs/bridge/add:
+    post:
+      summary: 新增网桥
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 网桥名称
+              required: [name]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bridge/delete:
+    post:
+      summary: 删除网桥
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: 网桥名称
+              required: [name]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bridge/list:
+    post:
+      summary: 查询网桥列表
+      requestBody:
+        required: false
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bridge/set-netflow:
+    post:
+      summary: 设置 NetFlow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                target:
+                  type: string
+                engineID:
+                  type: integer
+              required: [bridge, target]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bridge/set-sflow:
+    post:
+      summary: 设置 sFlow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                targets:
+                  type: array
+                  items:
+                    type: string
+                sampling:
+                  type: integer
+                header:
+                  type: integer
+                polling:
+                  type: integer
+                agent:
+                  type: string
+              required: [bridge, targets]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bridge/set-stp:
+    post:
+      summary: 设置 STP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                enable:
+                  type: boolean
+              required: [bridge, enable]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bridge/set-rstp:
+    post:
+      summary: 设置 RSTP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                enable:
+                  type: boolean
+              required: [bridge, enable]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bridge/set-ipfix:
+    post:
+      summary: 设置 IPFIX
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                targets:
+                  type: array
+                  items:
+                    type: string
+                sampling:
+                  type: integer
+                obsDomainID:
+                  type: integer
+                obsPointID:
+                  type: integer
+              required: [bridge, targets]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bridge/set-mcast-snooping:
+    post:
+      summary: 设置组播监听
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                enable:
+                  type: boolean
+              required: [bridge, enable]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bridge/set-datapath-type:
+    post:
+      summary: 设置 datapath_type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                datapathType:
+                  type: string
+              required: [bridge, datapathType]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bridge/dump-flows:
+    post:
+      summary: 查询流缓存
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+              required: [bridge]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/add:
+    post:
+      summary: 新增端口
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                portName:
+                  type: string
+                type:
+                  type: string
+              required: [bridge, portName]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/delete:
+    post:
+      summary: 删除端口
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                portName:
+                  type: string
+              required: [bridge, portName]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/list:
+    post:
+      summary: 查询端口列表
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+              required: [bridge]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/set-vlan:
+    post:
+      summary: 设置端口 VLAN tag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                portName:
+                  type: string
+                tag:
+                  type: integer
+              required: [portName, tag]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/set-vlan-mode:
+    post:
+      summary: 设置端口 VLAN mode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                portName:
+                  type: string
+                vlanMode:
+                  type: string
+              required: [portName, vlanMode]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/set-trunks:
+    post:
+      summary: 设置端口 trunks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                portName:
+                  type: string
+                trunks:
+                  type: array
+                  items:
+                    type: integer
+              required: [portName, trunks]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/remove-property:
+    post:
+      summary: 移除端口属性
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                portName:
+                  type: string
+                property:
+                  type: string
+                value:
+                  oneOf:
+                    - type: integer
+                    - type: string
+                    - type: array
+                      items:
+                        type: integer
+                    - type: array
+                      items:
+                        type: string
+              required: [portName, property, value]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/info:
+    post:
+      summary: 查询端口属性
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                portName:
+                  type: string
+              required: [portName]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/patch/add:
+    post:
+      summary: 添加 Patch Port
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                portName:
+                  type: string
+                peer:
+                  type: string
+              required: [bridge, portName, peer]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/tunnel/add:
+    post:
+      summary: 添加 Tunnel Port（GRE/Geneve/VXLAN）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                portName:
+                  type: string
+                type:
+                  type: string
+                options:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required: [bridge, portName, type]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/set-bfd:
+    post:
+      summary: 设置 BFD
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                portName:
+                  type: string
+                bfd:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required: [portName, bfd]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/set-cfm:
+    post:
+      summary: 设置 CFM (802.1ag)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                portName:
+                  type: string
+                cfm:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required: [portName, cfm]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/set-qos:
+    post:
+      summary: 设置 QoS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                portName:
+                  type: string
+                type:
+                  type: string
+                maxRate:
+                  type: string
+                queues:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required: [portName, type]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/set-hfsc-qos:
+    post:
+      summary: 设置 HFSC QoS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                portName:
+                  type: string
+                maxRate:
+                  type: string
+                queues:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required: [portName]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/updown:
+    post:
+      summary: 设置端口 up/down
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                netns:
+                  type: string
+                portName:
+                  type: string
+                up:
+                  type: boolean
+              required: [netns, portName, up]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/addr:
+    post:
+      summary: 给端口分配 IP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                netns:
+                  type: string
+                portName:
+                  type: string
+                ip:
+                  type: string
+              required: [netns, portName, ip]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/port/set-vlan:
+    post:
+      summary: 设置端口 VLAN tag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                portName:
+                  type: string
+                tag:
+                  type: integer
+              required: [portName, tag]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bond/add:
+    post:
+      summary: 新增 Bond
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                bondName:
+                  type: string
+                slaves:
+                  type: array
+                  items:
+                    type: string
+                bondMode:
+                  type: string
+                lacp:
+                  type: string
+                otherOptions:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required: [bridge, bondName, slaves]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bond/set:
+    post:
+      summary: 设置 Bond 属性
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bondName:
+                  type: string
+                bondMode:
+                  type: string
+                lacp:
+                  type: string
+                otherOptions:
+                  type: object
+                  additionalProperties:
+                    type: string
+              required: [bondName]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bond/show:
+    post:
+      summary: 查询 Bond 状态
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bondName:
+                  type: string
+              required: [bondName]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/bond/delete:
+    post:
+      summary: 删除 Bond
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                bondName:
+                  type: string
+              required: [bridge, bondName]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/mirror/add:
+    post:
+      summary: 新增端口镜像
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                name:
+                  type: string
+                selectSrcPorts:
+                  type: array
+                  items:
+                    type: string
+                selectDstPorts:
+                  type: array
+                  items:
+                    type: string
+                selectVlan:
+                  type: integer
+                outputPort:
+                  type: string
+                outputVlan:
+                  type: integer
+                selectAll:
+                  type: boolean
+              required: [bridge, name]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/mirror/delete:
+    post:
+      summary: 删除端口镜像
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                name:
+                  type: string
+              required: [bridge, name]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/mirror/list:
+    post:
+      summary: 查询端口镜像
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+              required: [bridge]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/flow/list-v2:
+    post:
+      summary: 查询流表规则
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+              required: [bridge]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/flow/add-v2:
+    post:
+      summary: 添加流表规则
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                flow:
+                  type: string
+              required: [bridge, flow]
+      responses:
+        '200':
+          description: 成功
+  /api/ovs/flow/delete-v2:
+    post:
+      summary: 删除流表规则
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bridge:
+                  type: string
+                match:
+                  type: string
+              required: [bridge]
+      responses:
+        '200':
+          description: 成功
+  /api/netns/create:
+    post:
+      summary: 新增命名空间
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required: [name]
+      responses:
+        '200':
+          description: 成功
+  /api/netns/delete:
+    post:
+      summary: 删除命名空间
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+              required: [name]
+      responses:
+        '200':
+          description: 成功
+  /api/netns/list:
+    post:
+      summary: 查询命名空间列表
+      requestBody:
+        required: false
+      responses:
+        '200':
+          description: 成功 
