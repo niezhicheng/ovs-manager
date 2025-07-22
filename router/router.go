@@ -21,6 +21,7 @@ func InitRouter() *gin.Engine {
 	RegisterFlowRoutes(ovs)
 	RegisterVxlanRoutes(ovs)
 	RegisterBondRoutes(ovs)
+	RegisterScenarioRoutes(r)
 
 	RegisterNetnsRoutes(r)
 
