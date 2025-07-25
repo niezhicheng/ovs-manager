@@ -29,6 +29,8 @@ func RegisterPortRoutes(rg *gin.RouterGroup) {
 	rg.POST("/bridge/set-datapath-type", api.SetDatapathTypeHandler) // 设置 datapath_type
 	rg.POST("/patch/add", api.AddPatchPortHandler) // 添加 patch 端口
 	rg.POST("/patch/add-pair", api.AddPatchPortPairHandler) // 一键成对创建 patch 端口
+	rg.POST("/port/patch-list", api.ListAllPatchPortsHandler) // 全局 patch 端口列表
 	rg.POST("/tap/add", api.AddTapPortHandler) // 添加 tap 端口
 	rg.POST("/tun/add", api.AddTunPortHandler) // 添加 tun 端口
+	rg.POST("/port/set-type-peer", api.SetPortTypePeerHandler) // 设置端口类型和 peer
 } 

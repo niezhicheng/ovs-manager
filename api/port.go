@@ -573,4 +573,32 @@ func SetDatapathTypeHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+type SetPortTypePeerRequest struct {
+	Bridge   string `json:"bridge" binding:"required"`
+	PortName string `json:"portName" binding:"required"`
+	Type     string `json:"type" binding:"required"`
+	Peer     string `json:"peer" binding:"required"`
+}
+func SetPortTypePeerHandler(c *gin.Context) {
+	var req SetPortTypePeerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.SetPortTypePeer(req.Bridge, req.PortName, req.Type, req.Peer); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "success"})
+}
+
+func ListAllPatchPortsHandler(c *gin.Context) {
+	patchPorts, err := service.ListAllPatchPorts()
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"patchPorts": patchPorts})
 } 

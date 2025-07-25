@@ -12,6 +12,13 @@ type PortInfoResponse struct {
 	Type string `json:"type"`
 }
 
+// PatchPortInfo 用于全局 patch 端口列表
+type PatchPortInfo struct {
+	Bridge string `json:"bridge"`
+	Name   string `json:"name"`
+	Peer   string `json:"peer"`
+}
+
 // ListPorts 列出指定 bridge 的所有端口，包含类型信息
 func ListPorts(bridge string) ([]PortInfoResponse, error) {
 	// 获取端口列表
@@ -256,4 +263,43 @@ func SetHfscQos(portName, maxRate string, queues map[string]string) error {
 func SetDatapathType(bridge, datapathType string) error {
 	cmd := exec.Command("ovs-vsctl", "set", "Bridge", bridge, fmt.Sprintf("datapath_type=%s", datapathType))
 	return cmd.Run()
+}
+
+// SetPortTypePeer 设置端口类型和 peer
+func SetPortTypePeer(bridge, portName, typ, peer string) error {
+	cmd := exec.Command("ovs-vsctl", "set", "Interface", portName, "type="+typ, "options:peer="+peer)
+	return cmd.Run()
+}
+
+// ListAllPatchPorts 返回所有 bridge 下的 patch 端口
+func ListAllPatchPorts() ([]PatchPortInfo, error) {
+	cmd := exec.Command("ovs-vsctl", "list-br")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	bridges := strings.Fields(string(output))
+	var result []PatchPortInfo
+	for _, bridge := range bridges {
+		portsCmd := exec.Command("ovs-vsctl", "list-ports", bridge)
+		portsOut, err := portsCmd.Output()
+		if err != nil {
+			continue
+		}
+		ports := strings.Fields(string(portsOut))
+		for _, port := range ports {
+			typeCmd := exec.Command("ovs-vsctl", "get", "interface", port, "type")
+			typeOut, err := typeCmd.Output()
+			if err != nil {
+				continue
+			}
+			if strings.TrimSpace(string(typeOut)) == "patch" {
+				peerCmd := exec.Command("ovs-vsctl", "get", "interface", port, "options:peer")
+				peerOut, _ := peerCmd.Output()
+				peer := strings.Trim(strings.TrimSpace(string(peerOut)), "\"")
+				result = append(result, PatchPortInfo{Bridge: bridge, Name: port, Peer: peer})
+			}
+		}
+	}
+	return result, nil
 }
