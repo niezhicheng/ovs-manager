@@ -6,20 +6,28 @@ import (
 	"strings"
 )
 
+type Response struct {
+	Name string `json:"name"`
+}
+
 // ListBridges 调用 ovs-vsctl 列出所有 bridge
-func ListBridges() ([]string, error) {
+func ListBridges() ([]Response, error) {
 	cmd := exec.Command("ovs-vsctl", "list-br")
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, err
+		return []Response{}, err
 	}
-	lines := []string{}
-	for _, line := range string(output) {
-		if line != '\n' {
-			lines = append(lines, string(line))
+
+	var data []Response
+	datas := strings.Split(string(output), "\n")
+	for _, s := range datas {
+		if s != "" {
+			data = append(data, Response{Name: s})
 		}
+
 	}
-	return lines, nil
+
+	return data, nil
 }
 
 // AddBridge 新增 bridge
@@ -136,4 +144,4 @@ func DumpFlows(bridge string) (string, error) {
 		return "", err
 	}
 	return string(output), nil
-} 
+}

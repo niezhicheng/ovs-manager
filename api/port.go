@@ -8,12 +8,12 @@ import (
 
 // ListPortsHandler 端口列表接口
 // @Summary 获取指定交换机的所有端口
-// @Description 获取指定 OVS 交换机下的所有端口
+// @Description 获取指定 OVS 交换机下的所有端口，包含端口类型信息
 // @Tags OVS-Port
 // @Accept json
 // @Produce json
 // @Param data body ListPortsRequest true "交换机名称"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} map[string]interface{} "返回端口列表，包含名称和类型"
 // @Router /api/ovs/port/list [post]
 type ListPortsRequest struct {
 	Bridge string `json:"bridge" binding:"required"`
@@ -295,15 +295,7 @@ func RemovePortPropertyHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
-// AddPatchPortRequest 添加 Patch Port 请求结构体
-// @Summary 添加 Patch Port
-// @Description 添加 Patch Port，支持 peer 配置
-// @Tags OVS-Port
-// @Accept json
-// @Produce json
-// @Param data body AddPatchPortRequest true "网桥、端口、peer"
-// @Success 200 {object} map[string]interface{}
-// @Router /api/ovs/patch/add [post]
+// AddPatchPortRequest patch 端口请求结构体
 type AddPatchPortRequest struct {
 	Bridge   string `json:"bridge" binding:"required"`
 	PortName string `json:"portName" binding:"required"`
@@ -312,17 +304,57 @@ type AddPatchPortRequest struct {
 func AddPatchPortHandler(c *gin.Context) {
 	var req AddPatchPortRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 	if err := service.AddPatchPort(req.Bridge, req.PortName, req.Peer); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "success"})
+	c.JSON(200, gin.H{"message": "success"})
 }
 
-// AddTunnelPortRequest 添加 Tunnel Port 请求结构体
+// AddPatchPortPairRequest patch 端口成对请求结构体
+type AddPatchPortPairRequest struct {
+	BridgeA string `json:"bridgeA" binding:"required"`
+	PortA   string `json:"portA" binding:"required"`
+	BridgeB string `json:"bridgeB" binding:"required"`
+	PortB   string `json:"portB" binding:"required"`
+}
+func AddPatchPortPairHandler(c *gin.Context) {
+	var req AddPatchPortPairRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.AddPatchPortPair(req.BridgeA, req.PortA, req.BridgeB, req.PortB); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "success"})
+}
+
+// AddBondPortRequest bond 端口请求结构体
+type AddBondPortRequest struct {
+	Bridge   string   `json:"bridge" binding:"required"`
+	PortName string   `json:"portName" binding:"required"`
+	Members  []string `json:"members" binding:"required"`
+	Mode     string   `json:"mode" binding:"required"`
+}
+func AddBondPortHandler(c *gin.Context) {
+	var req AddBondPortRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.AddBondPort(req.Bridge, req.PortName, req.Members, req.Mode); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "success"})
+}
+
+// AddTunnelPortRequest 添加 Tunnel Port（GRE/Geneve）
 // @Summary 添加 Tunnel Port（GRE/Geneve）
 // @Description 添加 GRE/Geneve Tunnel Port，支持 options 配置
 // @Tags OVS-Tunnel
@@ -348,6 +380,42 @@ func AddTunnelPortHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// AddTapPortRequest tap 端口请求结构体
+type AddTapPortRequest struct {
+	Bridge   string `json:"bridge" binding:"required"`
+	PortName string `json:"portName" binding:"required"`
+}
+func AddTapPortHandler(c *gin.Context) {
+	var req AddTapPortRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.AddTapPort(req.Bridge, req.PortName); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "success"})
+}
+
+// AddTunPortRequest tun 端口请求结构体
+type AddTunPortRequest struct {
+	Bridge   string `json:"bridge" binding:"required"`
+	PortName string `json:"portName" binding:"required"`
+}
+func AddTunPortHandler(c *gin.Context) {
+	var req AddTunPortRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.AddTunPort(req.Bridge, req.PortName); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "success"})
 }
 
 // PortInfoRequest 查询端口属性请求结构体

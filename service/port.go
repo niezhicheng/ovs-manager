@@ -6,20 +6,51 @@ import (
 	"strings"
 )
 
-// ListPorts 列出指定 bridge 的所有端口
-func ListPorts(bridge string) ([]string, error) {
+// PortInfo 端口信息结构体
+type PortInfoResponse struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+// ListPorts 列出指定 bridge 的所有端口，包含类型信息
+func ListPorts(bridge string) ([]PortInfoResponse, error) {
+	// 获取端口列表
 	cmd := exec.Command("ovs-vsctl", "list-ports", bridge)
 	output, err := cmd.Output()
 	if err != nil {
 		return nil, err
 	}
-	lines := []string{}
-	for _, line := range string(output) {
-		if line != '\n' {
-			lines = append(lines, string(line))
+
+	var ports []PortInfoResponse
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if line != "" {
+			// 获取端口类型
+			portType := getPortType(line)
+			ports = append(ports, PortInfoResponse{
+				Name: line,
+				Type: portType,
+			})
 		}
 	}
-	return lines, nil
+	return ports, nil
+}
+
+// getPortType 获取端口类型
+func getPortType(portName string) string {
+	// 查询端口类型
+	cmd := exec.Command("ovs-vsctl", "get", "Interface", portName, "type")
+	output, err := cmd.Output()
+	if err != nil {
+		// 如果获取类型失败，默认为 normal
+		return "normal"
+	}
+
+	portType := strings.TrimSpace(string(output))
+	if portType == "" {
+		return "normal"
+	}
+	return portType
 }
 
 // AddPort 向指定 bridge 添加端口，可指定类型
@@ -115,9 +146,29 @@ func RemovePortProperty(portName, property string, value interface{}) error {
 	return cmd.Run()
 }
 
-// AddPatchPort 添加 Patch Port
+// AddPatchPort 添加 patch 端口
 func AddPatchPort(bridge, portName, peer string) error {
-	cmd := exec.Command("ovs-vsctl", "add-port", bridge, portName, "--", "set", "interface", portName, "type=patch", fmt.Sprintf("options:peer=%s", peer))
+	cmd := exec.Command("ovs-vsctl", "add-port", bridge, portName, "--", "set", "Interface", portName, "type=patch", "options:peer="+peer)
+	return cmd.Run()
+}
+
+// AddPatchPortPair 一键成对创建 patch 端口
+func AddPatchPortPair(bridgeA, portA, bridgeB, portB string) error {
+	if err := AddPatchPort(bridgeA, portA, portB); err != nil {
+		return err
+	}
+	if err := AddPatchPort(bridgeB, portB, portA); err != nil {
+		return err
+	}
+	return nil
+}
+
+// AddBondPort 添加 bond 端口
+func AddBondPort(bridge, portName string, members []string, mode string) error {
+	args := []string{"add-bond", bridge, portName}
+	args = append(args, members...)
+	args = append(args, "bond_mode="+mode)
+	cmd := exec.Command("ovs-vsctl", args...)
 	return cmd.Run()
 }
 
@@ -128,6 +179,18 @@ func AddTunnelPort(bridge, portName, typ string, options map[string]string) erro
 		args = append(args, fmt.Sprintf("options:%s=%s", k, v))
 	}
 	cmd := exec.Command("ovs-vsctl", args...)
+	return cmd.Run()
+}
+
+// AddTapPort 添加 tap 端口
+func AddTapPort(bridge, portName string) error {
+	cmd := exec.Command("ovs-vsctl", "add-port", bridge, portName, "--", "set", "Interface", portName, "type=tap")
+	return cmd.Run()
+}
+
+// AddTunPort 添加 tun 端口
+func AddTunPort(bridge, portName string) error {
+	cmd := exec.Command("ovs-vsctl", "add-port", bridge, portName, "--", "set", "Interface", portName, "type=tun")
 	return cmd.Run()
 }
 
@@ -193,4 +256,4 @@ func SetHfscQos(portName, maxRate string, queues map[string]string) error {
 func SetDatapathType(bridge, datapathType string) error {
 	cmd := exec.Command("ovs-vsctl", "set", "Bridge", bridge, fmt.Sprintf("datapath_type=%s", datapathType))
 	return cmd.Run()
-} 
+}

@@ -1,12 +1,20 @@
 package router
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 // InitRouter 初始化 Gin 路由，汇总各功能模块
 func InitRouter() *gin.Engine {
 	r := gin.Default()
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"*"} // 允许所有源，也可以指定多个源，如：[]string{"http://localhost:8080", "http://example.com"}
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Cookie"}
+	config.AllowCredentials = true
+
+	r.Use(cors.New(config))
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -32,4 +40,4 @@ func InitRouter() *gin.Engine {
 	})
 
 	return r
-} 
+}
