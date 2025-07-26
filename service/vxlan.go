@@ -6,7 +6,7 @@ import (
 )
 
 // AddVxlanPort 添加 VXLAN 端口
-func AddVxlanPort(bridge, portName, remoteIP string, vni int, key, localIP string) error {
+func AddVxlanPortCustom(bridge, portName, remoteIP string, vni int, key, localIP string) error {
 	args := []string{"add-port", bridge, portName, "--", "set", "interface", portName, "type=vxlan"}
 	if remoteIP != "" {
 		args = append(args, fmt.Sprintf("options:remote_ip=%s", remoteIP))
@@ -22,4 +22,4 @@ func AddVxlanPort(bridge, portName, remoteIP string, vni int, key, localIP strin
 	}
 	cmd := exec.Command("ovs-vsctl", args...)
 	return cmd.Run()
-} 
+}

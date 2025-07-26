@@ -1,9 +1,9 @@
 package api
 
 import (
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"ovs-manager/service"
-	"github.com/gin-gonic/gin"
 )
 
 // ListPortsHandler 端口列表接口
@@ -18,6 +18,7 @@ import (
 type ListPortsRequest struct {
 	Bridge string `json:"bridge" binding:"required"`
 }
+
 func ListPortsHandler(c *gin.Context) {
 	var req ListPortsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -42,17 +43,155 @@ func ListPortsHandler(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/ovs/port/add [post]
 type AddPortRequest struct {
-	Bridge string `json:"bridge" binding:"required"`
+	Bridge   string `json:"bridge" binding:"required"`
 	PortName string `json:"portName" binding:"required"`
-	Type string `json:"type"`
+	Type     string `json:"type"`
+	NicName  string `json:"nicName"` // 网卡名称，用于normal类型
 }
+
 func AddPortHandler(c *gin.Context) {
 	var req AddPortRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := service.AddPort(req.Bridge, req.PortName, req.Type); err != nil {
+	if err := service.AddPort(req.Bridge, req.PortName, req.Type, req.NicName); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// AddNormalPortRequest 新增普通端口请求结构体
+// @Summary 新增普通端口
+// @Description 向指定 OVS 交换机添加普通端口
+// @Tags OVS-Port
+// @Accept json
+// @Produce json
+// @Param data body AddNormalPortRequest true "交换机名称、端口名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/port/add-normal [post]
+type AddNormalPortRequest struct {
+	Bridge   string `json:"bridge" binding:"required"`
+	PortName string `json:"portName" binding:"required"`
+	NicName  string `json:"nicName"`
+}
+
+func AddNormalPortHandler(c *gin.Context) {
+	var req AddNormalPortRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.AddNormalPort(req.Bridge, req.PortName, req.NicName); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// AddInternalPortRequest 新增内部端口请求结构体
+// @Summary 新增内部端口
+// @Description 向指定 OVS 交换机添加内部端口（可配置IP地址）
+// @Tags OVS-Port
+// @Accept json
+// @Produce json
+// @Param data body AddInternalPortRequest true "交换机名称、端口名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/port/add-internal [post]
+type AddInternalPortRequest struct {
+	Bridge   string `json:"bridge" binding:"required"`
+	PortName string `json:"portName" binding:"required"`
+}
+
+func AddInternalPortHandler(c *gin.Context) {
+	var req AddInternalPortRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.AddInternalPort(req.Bridge, req.PortName); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// AddGrePortRequest 新增GRE隧道端口请求结构体
+// @Summary 新增GRE隧道端口
+// @Description 向指定 OVS 交换机添加GRE隧道端口
+// @Tags OVS-Port
+// @Accept json
+// @Produce json
+// @Param data body AddGrePortRequest true "交换机名称、端口名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/port/add-gre [post]
+type AddGrePortRequest struct {
+	Bridge   string `json:"bridge" binding:"required"`
+	PortName string `json:"portName" binding:"required"`
+}
+
+func AddGrePortHandler(c *gin.Context) {
+	var req AddGrePortRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.AddGrePort(req.Bridge, req.PortName); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// AddVxlanPortRequest 新增VXLAN隧道端口请求结构体
+// @Summary 新增VXLAN隧道端口
+// @Description 向指定 OVS 交换机添加VXLAN隧道端口（基础版本）
+// @Tags OVS-Port
+// @Accept json
+// @Produce json
+// @Param data body AddVxlanPortRequest true "交换机名称、端口名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/port/add-vxlan [post]
+type AddVxlanPortRequest struct {
+	Bridge   string `json:"bridge" binding:"required"`
+	PortName string `json:"portName" binding:"required"`
+}
+
+func AddVxlanPortHandler(c *gin.Context) {
+	var req AddVxlanPortRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.AddVxlanPort(req.Bridge, req.PortName); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// AddBondPortRequest 新增Bond端口请求结构体
+// @Summary 新增Bond端口
+// @Description 向指定 OVS 交换机添加Bond端口（基础版本）
+// @Tags OVS-Port
+// @Accept json
+// @Produce json
+// @Param data body AddBondPortRequest true "交换机名称、端口名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/port/add-bond [post]
+type AddBondPortRequest struct {
+	Bridge   string `json:"bridge" binding:"required"`
+	PortName string `json:"portName" binding:"required"`
+}
+
+func AddBondPortHandler(c *gin.Context) {
+	var req AddBondPortRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.AddBondPort(req.Bridge, req.PortName); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -69,9 +208,10 @@ func AddPortHandler(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/ovs/port/delete [post]
 type DeletePortRequest struct {
-	Bridge string `json:"bridge" binding:"required"`
+	Bridge   string `json:"bridge" binding:"required"`
 	PortName string `json:"portName" binding:"required"`
 }
+
 func DeletePortHandler(c *gin.Context) {
 	var req DeletePortRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -96,8 +236,9 @@ func DeletePortHandler(c *gin.Context) {
 // @Router /api/ovs/port/bind-netns [post]
 type BindPortToNetnsRequest struct {
 	PortName string `json:"portName" binding:"required"`
-	Netns string `json:"netns" binding:"required"`
+	Netns    string `json:"netns" binding:"required"`
 }
+
 func BindPortToNetnsHandler(c *gin.Context) {
 	var req BindPortToNetnsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -123,6 +264,7 @@ func BindPortToNetnsHandler(c *gin.Context) {
 type UnbindPortFromNetnsRequest struct {
 	PortName string `json:"portName" binding:"required"`
 }
+
 func UnbindPortFromNetnsHandler(c *gin.Context) {
 	var req UnbindPortFromNetnsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -146,17 +288,17 @@ func UnbindPortFromNetnsHandler(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/ovs/port/updown [post]
 type SetPortUpDownRequest struct {
-	Netns string `json:"netns" binding:"required"`
 	PortName string `json:"portName" binding:"required"`
-	Up bool `json:"up"`
+	Up       bool   `json:"up"`
 }
+
 func SetPortUpDownHandler(c *gin.Context) {
 	var req SetPortUpDownRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := service.SetPortUpDown(req.Netns, req.PortName, req.Up); err != nil {
+	if err := service.SetPortUpDown(req.PortName, req.Up); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -173,17 +315,17 @@ func SetPortUpDownHandler(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/ovs/port/addr [post]
 type SetPortAddrRequest struct {
-	Netns string `json:"netns" binding:"required"`
 	PortName string `json:"portName" binding:"required"`
-	IP string `json:"ip" binding:"required"`
+	IP       string `json:"ip" binding:"required"`
 }
+
 func SetPortAddrHandler(c *gin.Context) {
 	var req SetPortAddrRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := service.SetPortAddr(req.Netns, req.PortName, req.IP); err != nil {
+	if err := service.SetPortAddr(req.PortName, req.IP); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -201,8 +343,9 @@ func SetPortAddrHandler(c *gin.Context) {
 // @Router /api/ovs/port/set-vlan [post]
 type SetPortVlanTagRequest struct {
 	PortName string `json:"portName" binding:"required"`
-	Tag int `json:"tag" binding:"required"`
+	Tag      int    `json:"tag" binding:"required"`
 }
+
 func SetPortVlanTagHandler(c *gin.Context) {
 	var req SetPortVlanTagRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -229,6 +372,7 @@ type SetPortVlanModeRequest struct {
 	PortName string `json:"portName" binding:"required"`
 	VlanMode string `json:"vlanMode" binding:"required"`
 }
+
 func SetPortVlanModeHandler(c *gin.Context) {
 	var req SetPortVlanModeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -255,6 +399,7 @@ type SetPortTrunksRequest struct {
 	PortName string `json:"portName" binding:"required"`
 	Trunks   []int  `json:"trunks" binding:"required"`
 }
+
 func SetPortTrunksHandler(c *gin.Context) {
 	var req SetPortTrunksRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -282,6 +427,7 @@ type RemovePortPropertyRequest struct {
 	Property string      `json:"property" binding:"required"`
 	Value    interface{} `json:"value" binding:"required"`
 }
+
 func RemovePortPropertyHandler(c *gin.Context) {
 	var req RemovePortPropertyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -296,11 +442,20 @@ func RemovePortPropertyHandler(c *gin.Context) {
 }
 
 // AddPatchPortRequest patch 端口请求结构体
+// @Summary 新增 patch 端口
+// @Description 新增 patch 端口，peer参数可选
+// @Tags OVS-Port
+// @Accept json
+// @Produce json
+// @Param data body AddPatchPortRequest true "网桥、端口名称、对端端口（可选）"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/patch/add [post]
 type AddPatchPortRequest struct {
 	Bridge   string `json:"bridge" binding:"required"`
 	PortName string `json:"portName" binding:"required"`
-	Peer     string `json:"peer" binding:"required"`
+	Peer     string `json:"peer"` // 可选参数
 }
+
 func AddPatchPortHandler(c *gin.Context) {
 	var req AddPatchPortRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -314,6 +469,60 @@ func AddPatchPortHandler(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "success"})
 }
 
+// AddPatchPortWithoutPeerRequest 新增不设置对端的 patch 端口请求结构体
+// @Summary 新增不设置对端的 patch 端口
+// @Description 新增 patch 端口但不设置对端，后续可通过SetPatchPortPeer设置
+// @Tags OVS-Port
+// @Accept json
+// @Produce json
+// @Param data body AddPatchPortWithoutPeerRequest true "网桥、端口名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/patch/add-without-peer [post]
+type AddPatchPortWithoutPeerRequest struct {
+	Bridge   string `json:"bridge" binding:"required"`
+	PortName string `json:"portName" binding:"required"`
+}
+
+func AddPatchPortWithoutPeerHandler(c *gin.Context) {
+	var req AddPatchPortWithoutPeerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.AddPatchPortWithoutPeer(req.Bridge, req.PortName); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "success"})
+}
+
+// SetPatchPortPeerRequest 设置 patch 端口对端请求结构体
+// @Summary 设置 patch 端口对端
+// @Description 为已存在的 patch 端口设置对端
+// @Tags OVS-Port
+// @Accept json
+// @Produce json
+// @Param data body SetPatchPortPeerRequest true "端口名称、对端端口"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/patch/set-peer [post]
+type SetPatchPortPeerRequest struct {
+	PortName string `json:"portName" binding:"required"`
+	Peer     string `json:"peer" binding:"required"`
+}
+
+func SetPatchPortPeerHandler(c *gin.Context) {
+	var req SetPatchPortPeerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.SetPatchPortPeer(req.PortName, req.Peer); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "success"})
+}
+
 // AddPatchPortPairRequest patch 端口成对请求结构体
 type AddPatchPortPairRequest struct {
 	BridgeA string `json:"bridgeA" binding:"required"`
@@ -321,6 +530,7 @@ type AddPatchPortPairRequest struct {
 	BridgeB string `json:"bridgeB" binding:"required"`
 	PortB   string `json:"portB" binding:"required"`
 }
+
 func AddPatchPortPairHandler(c *gin.Context) {
 	var req AddPatchPortPairRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -334,20 +544,21 @@ func AddPatchPortPairHandler(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "success"})
 }
 
-// AddBondPortRequest bond 端口请求结构体
-type AddBondPortRequest struct {
+// AddBondPortWithMembersRequest bond 端口请求结构体（带成员）
+type AddBondPortWithMembersRequest struct {
 	Bridge   string   `json:"bridge" binding:"required"`
 	PortName string   `json:"portName" binding:"required"`
 	Members  []string `json:"members" binding:"required"`
 	Mode     string   `json:"mode" binding:"required"`
 }
-func AddBondPortHandler(c *gin.Context) {
-	var req AddBondPortRequest
+
+func AddBondPortWithMembersHandler(c *gin.Context) {
+	var req AddBondPortWithMembersRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	if err := service.AddBondPort(req.Bridge, req.PortName, req.Members, req.Mode); err != nil {
+	if err := service.AddBondPortWithMembers(req.Bridge, req.PortName, req.Members, req.Mode); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
@@ -369,6 +580,7 @@ type AddTunnelPortRequest struct {
 	Type     string            `json:"type" binding:"required"`
 	Options  map[string]string `json:"options"`
 }
+
 func AddTunnelPortHandler(c *gin.Context) {
 	var req AddTunnelPortRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -387,6 +599,7 @@ type AddTapPortRequest struct {
 	Bridge   string `json:"bridge" binding:"required"`
 	PortName string `json:"portName" binding:"required"`
 }
+
 func AddTapPortHandler(c *gin.Context) {
 	var req AddTapPortRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -405,6 +618,7 @@ type AddTunPortRequest struct {
 	Bridge   string `json:"bridge" binding:"required"`
 	PortName string `json:"portName" binding:"required"`
 }
+
 func AddTunPortHandler(c *gin.Context) {
 	var req AddTunPortRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -430,6 +644,7 @@ func AddTunPortHandler(c *gin.Context) {
 type PortInfoRequest struct {
 	PortName string `json:"portName" binding:"required"`
 }
+
 func PortInfoHandler(c *gin.Context) {
 	var req PortInfoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -457,6 +672,7 @@ type SetBfdRequest struct {
 	PortName string            `json:"portName" binding:"required"`
 	Bfd      map[string]string `json:"bfd" binding:"required"`
 }
+
 func SetBfdHandler(c *gin.Context) {
 	var req SetBfdRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -483,6 +699,7 @@ type SetCfmRequest struct {
 	PortName string            `json:"portName" binding:"required"`
 	Cfm      map[string]string `json:"cfm" binding:"required"`
 }
+
 func SetCfmHandler(c *gin.Context) {
 	var req SetCfmRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -509,6 +726,7 @@ type SetMcastSnoopingRequest struct {
 	Bridge string `json:"bridge" binding:"required"`
 	Enable bool   `json:"enable" binding:"required"`
 }
+
 func SetMcastSnoopingHandler(c *gin.Context) {
 	var req SetMcastSnoopingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -536,6 +754,7 @@ type SetHfscQosRequest struct {
 	MaxRate  string            `json:"maxRate"`
 	Queues   map[string]string `json:"queues"`
 }
+
 func SetHfscQosHandler(c *gin.Context) {
 	var req SetHfscQosRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -559,9 +778,10 @@ func SetHfscQosHandler(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/ovs/bridge/set-datapath-type [post]
 type SetDatapathTypeRequest struct {
-	Bridge        string `json:"bridge" binding:"required"`
-	DatapathType  string `json:"datapathType" binding:"required"`
+	Bridge       string `json:"bridge" binding:"required"`
+	DatapathType string `json:"datapathType" binding:"required"`
 }
+
 func SetDatapathTypeHandler(c *gin.Context) {
 	var req SetDatapathTypeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -581,6 +801,7 @@ type SetPortTypePeerRequest struct {
 	Type     string `json:"type" binding:"required"`
 	Peer     string `json:"peer" binding:"required"`
 }
+
 func SetPortTypePeerHandler(c *gin.Context) {
 	var req SetPortTypePeerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -602,3 +823,129 @@ func ListAllPatchPortsHandler(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"patchPorts": patchPorts})
 } 
+
+// GetPortAddrsRequest 获取端口IP地址列表请求结构体
+type GetPortAddrsRequest struct {
+	PortName string `json:"portName" binding:"required"`
+}
+
+// GetPortAddrsHandler 获取端口IP地址列表
+func GetPortAddrsHandler(c *gin.Context) {
+	var req GetPortAddrsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	ips, err := service.GetPortAddrs(req.PortName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ips": ips})
+}
+
+// DeletePortAddrRequest 删除端口IP地址请求结构体
+type DeletePortAddrRequest struct {
+	PortName string `json:"portName" binding:"required"`
+	IP       string `json:"ip" binding:"required"`
+}
+
+// DeletePortAddrHandler 删除端口IP地址
+func DeletePortAddrHandler(c *gin.Context) {
+	var req DeletePortAddrRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.DeletePortAddr(req.PortName, req.IP); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// SetPortAliasRequest 设置端口别名请求结构体
+// @Summary 设置端口别名
+// @Description 设置端口别名（external-ids:ovs-port-name）
+// @Tags OVS-Port
+// @Accept json
+// @Produce json
+// @Param data body SetPortAliasRequest true "端口名称、别名"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/port/set-alias [post]
+type SetPortAliasRequest struct {
+	PortName string `json:"portName" binding:"required"`
+	Alias    string `json:"alias" binding:"required"`
+}
+
+func SetPortAliasHandler(c *gin.Context) {
+	var req SetPortAliasRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.SetPortAlias(req.PortName, req.Alias); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "success"})
+}
+
+// SetPortRouteRequest 设置端口路由请求结构体
+type SetPortRouteRequest struct {
+	PortName    string `json:"portName" binding:"required"`
+	Destination string `json:"destination" binding:"required"`
+	Gateway     string `json:"gateway" binding:"required"`
+}
+
+func SetPortRouteHandler(c *gin.Context) {
+	var req SetPortRouteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.SetPortRoute(req.PortName, req.Destination, req.Gateway); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// DeletePortRouteRequest 删除端口路由请求结构体
+type DeletePortRouteRequest struct {
+	PortName    string `json:"portName" binding:"required"`
+	Destination string `json:"destination" binding:"required"`
+	Gateway     string `json:"gateway" binding:"required"`
+}
+
+func DeletePortRouteHandler(c *gin.Context) {
+	var req DeletePortRouteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if err := service.DeletePortRoute(req.PortName, req.Destination, req.Gateway); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// GetPortRoutesRequest 获取端口路由列表请求结构体
+type GetPortRoutesRequest struct {
+	PortName string `json:"portName" binding:"required"`
+}
+
+func GetPortRoutesHandler(c *gin.Context) {
+	var req GetPortRoutesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	routes, err := service.GetPortRoutes(req.PortName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"routes": routes})
+}

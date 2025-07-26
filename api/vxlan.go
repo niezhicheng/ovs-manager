@@ -1,9 +1,9 @@
 package api
 
 import (
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"ovs-manager/service"
-	"github.com/gin-gonic/gin"
 )
 
 // AddVxlanPortRequest 新增 VXLAN 端口请求结构体
@@ -15,21 +15,22 @@ import (
 // @Param data body AddVxlanPortRequest true "VXLAN 端口参数"
 // @Success 200 {object} map[string]interface{}
 // @Router /api/ovs/vxlan/add [post]
-type AddVxlanPortRequest struct {
-	Bridge string `json:"bridge" binding:"required"`
+type AddVxlanPortCustomRequest struct {
+	Bridge   string `json:"bridge" binding:"required"`
 	PortName string `json:"portName" binding:"required"`
 	RemoteIP string `json:"remoteIP" binding:"required"`
-	VNI int `json:"vni" binding:"required"`
-	Key string `json:"key"`
-	LocalIP string `json:"localIP"`
+	VNI      int    `json:"vni" binding:"required"`
+	Key      string `json:"key"`
+	LocalIP  string `json:"localIP"`
 }
-func AddVxlanPortHandler(c *gin.Context) {
-	var req AddVxlanPortRequest
+
+func AddVxlanPortCustomHandler(c *gin.Context) {
+	var req AddVxlanPortCustomRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if err := service.AddVxlanPort(req.Bridge, req.PortName, req.RemoteIP, req.VNI, req.Key, req.LocalIP); err != nil {
+	if err := service.AddVxlanPortCustom(req.Bridge, req.PortName, req.RemoteIP, req.VNI, req.Key, req.LocalIP); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -49,6 +50,7 @@ type DeleteVxlanPortRequest struct {
 	Bridge   string `json:"bridge" binding:"required"`
 	PortName string `json:"portName" binding:"required"`
 }
+
 func DeleteVxlanPortHandler(c *gin.Context) {
 	var req DeleteVxlanPortRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -60,4 +62,4 @@ func DeleteVxlanPortHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
-} 
+}

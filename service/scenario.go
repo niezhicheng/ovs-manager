@@ -18,7 +18,7 @@ func ExecuteScenarioStep(action string, params map[string]interface{}) (error, i
 		bridge, _ := params["bridge"].(string)
 		portName, _ := params["portName"].(string)
 		portType, _ := params["type"].(string)
-		return AddPort(bridge, portName, portType), nil
+		return AddPort(bridge, portName, portType, ""), nil
 	case "delete_port":
 		bridge, _ := params["bridge"].(string)
 		portName, _ := params["portName"].(string)
@@ -205,4 +205,4 @@ func toStringMap(v interface{}) (map[string]string, bool) {
 		}
 	}
 	return res, true
-} 
+}
