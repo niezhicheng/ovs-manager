@@ -25,11 +25,12 @@ func ListNetns() ([]string, error) {
 		return nil, err
 	}
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	for i, line := range lines {
-		lines[i] = strings.Fields(line)[0]
+	var result []string
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) > 0 {
+			result = append(result, fields[0])
+		}
 	}
-	if len(lines) == 1 && lines[0] == "" {
-		return []string{}, nil
-	}
-	return lines, nil
+	return result, nil
 } 
