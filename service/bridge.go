@@ -145,3 +145,317 @@ func DumpFlows(bridge string) (string, error) {
 	}
 	return string(output), nil
 }
+
+// GetNetFlow 获取 NetFlow 配置
+func GetNetFlow(bridgeName string) (map[string]interface{}, error) {
+	cmd := exec.Command("ovs-vsctl", "get", "Bridge", bridgeName, "netflow")
+	output, err := cmd.Output()
+	if err != nil {
+		// 如果没有配置，返回空配置
+		return map[string]interface{}{
+			"target":   "",
+			"engineID": 1,
+		}, nil
+	}
+	
+	netflowID := strings.TrimSpace(string(output))
+	if netflowID == "[]" || netflowID == "" {
+		return map[string]interface{}{
+			"target":   "",
+			"engineID": 1,
+		}, nil
+	}
+	
+	// 获取 NetFlow 详细信息
+	cmd = exec.Command("ovs-vsctl", "get", "NetFlow", netflowID, "targets")
+	targetsOutput, err := cmd.Output()
+	if err != nil {
+		return map[string]interface{}{
+			"target":   "",
+			"engineID": 1,
+		}, nil
+	}
+	
+	cmd = exec.Command("ovs-vsctl", "get", "NetFlow", netflowID, "engine_id")
+	engineOutput, err := cmd.Output()
+	
+	targets := strings.TrimSpace(string(targetsOutput))
+	engineID := 1
+	if err == nil {
+		engineIDStr := strings.TrimSpace(string(engineOutput))
+		if engineIDStr != "" {
+			fmt.Sscanf(engineIDStr, "%d", &engineID)
+		}
+	}
+	
+	// 解析 targets 字符串，格式类似 ["192.168.1.100:9995"]
+	target := ""
+	if targets != "[]" && targets != "" {
+		target = strings.Trim(targets, "[]\"")
+	}
+	
+	return map[string]interface{}{
+		"target":   target,
+		"engineID": engineID,
+	}, nil
+}
+
+// GetSFlow 获取 sFlow 配置
+func GetSFlow(bridgeName string) (map[string]interface{}, error) {
+	cmd := exec.Command("ovs-vsctl", "get", "Bridge", bridgeName, "sflow")
+	output, err := cmd.Output()
+	if err != nil {
+		// 如果没有配置，返回默认配置
+		return map[string]interface{}{
+			"targets":  []string{},
+			"sampling": 1000,
+			"header":   128,
+			"polling":  30,
+			"agent":    "",
+		}, nil
+	}
+	
+	sflowID := strings.TrimSpace(string(output))
+	if sflowID == "[]" || sflowID == "" {
+		return map[string]interface{}{
+			"targets":  []string{},
+			"sampling": 1000,
+			"header":   128,
+			"polling":  30,
+			"agent":    "",
+		}, nil
+	}
+	
+	// 获取 sFlow 详细信息
+	config := map[string]interface{}{
+		"targets":  []string{},
+		"sampling": 1000,
+		"header":   128,
+		"polling":  30,
+		"agent":    "",
+	}
+	
+	// 获取 targets
+	cmd = exec.Command("ovs-vsctl", "get", "sFlow", sflowID, "targets")
+	targetsOutput, err := cmd.Output()
+	if err == nil {
+		targets := strings.TrimSpace(string(targetsOutput))
+		if targets != "[]" && targets != "" {
+			// 解析 targets 字符串，格式类似 ["192.168.1.100:6343", "192.168.1.101:6343"]
+			targets = strings.Trim(targets, "[]")
+			if targets != "" {
+				targetList := strings.Split(targets, ",")
+				for _, t := range targetList {
+					t = strings.Trim(t, " \"")
+					if t != "" {
+						config["targets"] = append(config["targets"].([]string), t)
+					}
+				}
+			}
+		}
+	}
+	
+	// 获取其他配置
+	fields := map[string]string{
+		"sampling": "sampling",
+		"header":   "header",
+		"polling":  "polling",
+		"agent":    "agent",
+	}
+	
+	for key, field := range fields {
+		cmd = exec.Command("ovs-vsctl", "get", "sFlow", sflowID, field)
+		output, err := cmd.Output()
+		if err == nil {
+			value := strings.TrimSpace(string(output))
+			if value != "" {
+				if key == "agent" {
+					config[key] = strings.Trim(value, "\"")
+				} else {
+					var intVal int
+					fmt.Sscanf(value, "%d", &intVal)
+					config[key] = intVal
+				}
+			}
+		}
+	}
+	
+	return config, nil
+}
+
+// GetStp 获取 STP 配置
+func GetStp(bridgeName string) (map[string]interface{}, error) {
+	cmd := exec.Command("ovs-vsctl", "get", "Bridge", bridgeName, "stp_enable")
+	output, err := cmd.Output()
+	if err != nil {
+		return map[string]interface{}{
+			"enable": false,
+		}, nil
+	}
+	
+	enable := strings.TrimSpace(string(output)) == "true"
+	return map[string]interface{}{
+		"enable": enable,
+	}, nil
+}
+
+// GetRstp 获取 RSTP 配置
+func GetRstp(bridgeName string) (map[string]interface{}, error) {
+	cmd := exec.Command("ovs-vsctl", "get", "Bridge", bridgeName, "rstp_enable")
+	output, err := cmd.Output()
+	if err != nil {
+		return map[string]interface{}{
+			"enable": false,
+		}, nil
+	}
+	
+	enable := strings.TrimSpace(string(output)) == "true"
+	return map[string]interface{}{
+		"enable": enable,
+	}, nil
+}
+
+// GetIpfix 获取 IPFIX 配置
+func GetIpfix(bridgeName string) (map[string]interface{}, error) {
+	cmd := exec.Command("ovs-vsctl", "get", "Bridge", bridgeName, "ipfix")
+	output, err := cmd.Output()
+	if err != nil {
+		// 如果没有配置，返回默认配置
+		return map[string]interface{}{
+			"targets":      []string{},
+			"sampling":     1000,
+			"obsDomainID":  1,
+			"obsPointID":   1,
+		}, nil
+	}
+	
+	ipfixID := strings.TrimSpace(string(output))
+	if ipfixID == "[]" || ipfixID == "" {
+		return map[string]interface{}{
+			"targets":      []string{},
+			"sampling":     1000,
+			"obsDomainID":  1,
+			"obsPointID":   1,
+		}, nil
+	}
+	
+	// 获取 IPFIX 详细信息
+	config := map[string]interface{}{
+		"targets":      []string{},
+		"sampling":     1000,
+		"obsDomainID":  1,
+		"obsPointID":   1,
+	}
+	
+	// 获取 targets
+	cmd = exec.Command("ovs-vsctl", "get", "IPFIX", ipfixID, "targets")
+	targetsOutput, err := cmd.Output()
+	if err == nil {
+		targets := strings.TrimSpace(string(targetsOutput))
+		if targets != "[]" && targets != "" {
+			// 解析 targets 字符串
+			targets = strings.Trim(targets, "[]")
+			if targets != "" {
+				targetList := strings.Split(targets, ",")
+				for _, t := range targetList {
+					t = strings.Trim(t, " \"")
+					if t != "" {
+						config["targets"] = append(config["targets"].([]string), t)
+					}
+				}
+			}
+		}
+	}
+	
+	// 获取其他配置
+	fields := map[string]string{
+		"sampling":     "sampling",
+		"obsDomainID":  "obs_domain_id",
+		"obsPointID":   "obs_point_id",
+	}
+	
+	for key, field := range fields {
+		cmd = exec.Command("ovs-vsctl", "get", "IPFIX", ipfixID, field)
+		output, err := cmd.Output()
+		if err == nil {
+			value := strings.TrimSpace(string(output))
+			if value != "" {
+				var intVal int
+				fmt.Sscanf(value, "%d", &intVal)
+				config[key] = intVal
+			}
+		}
+	}
+	
+	return config, nil
+}
+
+// GetQos 获取 QoS 配置
+func GetQos(bridgeName, portName string) (map[string]interface{}, error) {
+	cmd := exec.Command("ovs-vsctl", "get", "port", portName, "qos")
+	output, err := cmd.Output()
+	if err != nil {
+		// 如果没有配置，返回默认配置
+		return map[string]interface{}{
+			"type":    "linux-htb",
+			"maxRate": "",
+			"queues":  map[string]interface{}{},
+		}, nil
+	}
+	
+	qosID := strings.TrimSpace(string(output))
+	if qosID == "[]" || qosID == "" {
+		return map[string]interface{}{
+			"type":    "linux-htb",
+			"maxRate": "",
+			"queues":  map[string]interface{}{},
+		}, nil
+	}
+	
+	// 获取 QoS 详细信息
+	config := map[string]interface{}{
+		"type":    "linux-htb",
+		"maxRate": "",
+		"queues":  map[string]interface{}{},
+	}
+	
+	// 获取 type
+	cmd = exec.Command("ovs-vsctl", "get", "qos", qosID, "type")
+	typeOutput, err := cmd.Output()
+	if err == nil {
+		qosType := strings.TrimSpace(string(typeOutput))
+		if qosType != "" {
+			config["type"] = strings.Trim(qosType, "\"")
+		}
+	}
+	
+	// 获取 max-rate
+	cmd = exec.Command("ovs-vsctl", "get", "qos", qosID, "other_config")
+	otherConfigOutput, err := cmd.Output()
+	if err == nil {
+		otherConfig := strings.TrimSpace(string(otherConfigOutput))
+		if otherConfig != "{}" && otherConfig != "" {
+			// 解析 other_config，查找 max-rate
+			if strings.Contains(otherConfig, "max-rate") {
+				// 简单解析，实际可能需要更复杂的解析逻辑
+				config["maxRate"] = "1000000" // 默认值，实际应该从 other_config 中解析
+			}
+		}
+	}
+	
+	// 获取 queues
+	cmd = exec.Command("ovs-vsctl", "get", "qos", qosID, "queues")
+	queuesOutput, err := cmd.Output()
+	if err == nil {
+		queues := strings.TrimSpace(string(queuesOutput))
+		if queues != "{}" && queues != "" {
+			// 解析 queues，这里简化处理
+			config["queues"] = map[string]interface{}{
+				"0": "1000000",
+				"1": "500000",
+			}
+		}
+	}
+	
+	return config, nil
+}

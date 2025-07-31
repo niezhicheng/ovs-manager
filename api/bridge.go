@@ -102,6 +102,32 @@ func SetNetFlowHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
+// GetNetFlowRequest 获取 NetFlow 配置请求结构体
+// @Summary 获取 NetFlow 配置
+// @Description 获取网桥的 NetFlow 配置
+// @Tags OVS-Bridge
+// @Accept json
+// @Produce json
+// @Param data body GetNetFlowRequest true "网桥名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/bridge/get-netflow [post]
+type GetNetFlowRequest struct {
+	BridgeName string `json:"bridge_name" binding:"required"`
+}
+func GetNetFlowHandler(c *gin.Context) {
+	var req GetNetFlowRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	config, err := service.GetNetFlow(req.BridgeName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"config": config})
+}
+
 // SetSFlowRequest 设置 sFlow 请求结构体
 // @Summary 设置 sFlow
 // @Description 设置网桥的 sFlow 配置
@@ -132,6 +158,32 @@ func SetSFlowHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
+// GetSFlowRequest 获取 sFlow 配置请求结构体
+// @Summary 获取 sFlow 配置
+// @Description 获取网桥的 sFlow 配置
+// @Tags OVS-Bridge
+// @Accept json
+// @Produce json
+// @Param data body GetSFlowRequest true "网桥名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/bridge/get-sflow [post]
+type GetSFlowRequest struct {
+	BridgeName string `json:"bridge_name" binding:"required"`
+}
+func GetSFlowHandler(c *gin.Context) {
+	var req GetSFlowRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	config, err := service.GetSFlow(req.BridgeName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"config": config})
+}
+
 // SetStpRequest 设置 STP 请求结构体
 // @Summary 设置 STP
 // @Description 设置网桥的 STP 配置
@@ -156,6 +208,32 @@ func SetStpHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// GetStpRequest 获取 STP 配置请求结构体
+// @Summary 获取 STP 配置
+// @Description 获取网桥的 STP 配置
+// @Tags OVS-Bridge
+// @Accept json
+// @Produce json
+// @Param data body GetStpRequest true "网桥名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/bridge/get-stp [post]
+type GetStpRequest struct {
+	BridgeName string `json:"bridge_name" binding:"required"`
+}
+func GetStpHandler(c *gin.Context) {
+	var req GetStpRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	config, err := service.GetStp(req.BridgeName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"config": config})
 }
 
 // SetQosRequest 设置 QoS 请求结构体
@@ -186,6 +264,33 @@ func SetQosHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
 }
 
+// GetQosRequest 获取 QoS 配置请求结构体
+// @Summary 获取 QoS 配置
+// @Description 获取端口的 QoS 配置
+// @Tags OVS-Bridge
+// @Accept json
+// @Produce json
+// @Param data body GetQosRequest true "网桥名称和端口名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/bridge/get-qos [post]
+type GetQosRequest struct {
+	BridgeName string `json:"bridge_name" binding:"required"`
+	PortName   string `json:"port_name" binding:"required"`
+}
+func GetQosHandler(c *gin.Context) {
+	var req GetQosRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	config, err := service.GetQos(req.BridgeName, req.PortName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"config": config})
+}
+
 // SetRstpRequest 设置 RSTP 请求结构体
 // @Summary 设置 RSTP
 // @Description 设置网桥的 RSTP 配置
@@ -210,6 +315,32 @@ func SetRstpHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// GetRstpRequest 获取 RSTP 配置请求结构体
+// @Summary 获取 RSTP 配置
+// @Description 获取网桥的 RSTP 配置
+// @Tags OVS-Bridge
+// @Accept json
+// @Produce json
+// @Param data body GetRstpRequest true "网桥名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/bridge/get-rstp [post]
+type GetRstpRequest struct {
+	BridgeName string `json:"bridge_name" binding:"required"`
+}
+func GetRstpHandler(c *gin.Context) {
+	var req GetRstpRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	config, err := service.GetRstp(req.BridgeName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"config": config})
 }
 
 // SetIpfixRequest 设置 IPFIX 请求结构体
@@ -239,6 +370,32 @@ func SetIpfixHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
+}
+
+// GetIpfixRequest 获取 IPFIX 配置请求结构体
+// @Summary 获取 IPFIX 配置
+// @Description 获取网桥的 IPFIX 配置
+// @Tags OVS-Bridge
+// @Accept json
+// @Produce json
+// @Param data body GetIpfixRequest true "网桥名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/bridge/get-ipfix [post]
+type GetIpfixRequest struct {
+	BridgeName string `json:"bridge_name" binding:"required"`
+}
+func GetIpfixHandler(c *gin.Context) {
+	var req GetIpfixRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	config, err := service.GetIpfix(req.BridgeName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"config": config})
 }
 
 // DumpFlowsRequest 查询流缓存请求结构体

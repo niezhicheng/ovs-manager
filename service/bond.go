@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"os/exec"
+	"strings"
 )
 
 // AddBond 新增 Bond 端口并设置属性
@@ -74,4 +75,88 @@ func ShowBond(bondName string) (string, string, string, error) {
 func DeleteBond(bridge, bondName string) error {
 	cmd := exec.Command("ovs-vsctl", "del-port", bridge, bondName)
 	return cmd.Run()
+}
+
+// ListBonds 返回所有 Bond 端口及其成员和模式
+func ListBonds() ([]map[string]interface{}, error) {
+	// 获取所有 port
+	out, err := exec.Command("ovs-vsctl", "list", "port").Output()
+	if err != nil {
+		return nil, err
+	}
+	lines := strings.Split(string(out), "\n")
+	var bonds []map[string]interface{}
+	var bond map[string]interface{}
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			if bond != nil && bond["name"] != nil && bond["bond_mode"] != nil && bond["interfaces"] != nil {
+				bonds = append(bonds, bond)
+			}
+			bond = nil
+			continue
+		}
+		if strings.HasPrefix(line, "_uuid") {
+			bond = make(map[string]interface{})
+		}
+		if bond == nil {
+			continue
+		}
+		if strings.HasPrefix(line, "name") {
+			bond["name"] = strings.TrimSpace(strings.TrimPrefix(line, "name               : "))
+		}
+		if strings.HasPrefix(line, "bond_mode") {
+			bond["mode"] = strings.TrimSpace(strings.TrimPrefix(line, "bond_mode          : "))
+		}
+		if strings.HasPrefix(line, "interfaces") {
+			members := strings.TrimSpace(strings.TrimPrefix(line, "interfaces         : "))
+			members = strings.Trim(members, "[]")
+			if members != "" {
+				bond["members"] = strings.Split(members, ", ")
+			} else {
+				bond["members"] = []string{}
+			}
+		}
+	}
+	// 获取每个 Bond 所属的网桥
+	for _, bond := range bonds {
+		bondName := bond["name"].(string)
+		bridge, err := getBondBridge(bondName)
+		if err == nil {
+			bond["bridge"] = bridge
+		} else {
+			bond["bridge"] = ""
+		}
+	}
+	return bonds, nil
+}
+
+// getBondBridge 获取 Bond 所属的网桥
+func getBondBridge(bondName string) (string, error) {
+	// 获取所有网桥
+	out, err := exec.Command("ovs-vsctl", "list", "bridge").Output()
+	if err != nil {
+		return "", err
+	}
+	lines := strings.Split(string(out), "\n")
+	var currentBridge string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "name") {
+			currentBridge = strings.TrimSpace(strings.TrimPrefix(line, "name               : "))
+		}
+		if strings.HasPrefix(line, "ports") {
+			ports := strings.TrimSpace(strings.TrimPrefix(line, "ports              : "))
+			ports = strings.Trim(ports, "[]")
+			if ports != "" {
+				portList := strings.Split(ports, ", ")
+				for _, port := range portList {
+					if port == bondName {
+						return currentBridge, nil
+					}
+				}
+			}
+		}
+	}
+	return "", fmt.Errorf("bond %s not found in any bridge", bondName)
 }

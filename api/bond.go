@@ -90,6 +90,23 @@ func ShowBondHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"bondShow": bondShow, "lacpShow": lacpShow, "portInfo": portInfo})
 }
 
+// ListBondsRequest 查询所有 Bond 端口请求结构体
+// @Summary 查询所有 Bond 端口
+// @Description 查询所有 Bond 端口及其成员和模式
+// @Tags OVS-Bond
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/bond/show [post]
+func ListBondsHandler(c *gin.Context) {
+	bonds, err := service.ListBonds()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"bonds": bonds})
+}
+
 // DeleteBondRequest 删除 Bond 请求结构体
 // @Summary 删除 Bond 端口
 // @Description 删除 Bond 端口
