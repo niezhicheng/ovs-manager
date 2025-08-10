@@ -39,8 +39,27 @@ func DeleteMirror(bridge, name string) error {
 
 // ListMirrors 查询端口镜像
 func ListMirrors(bridge string) (string, error) {
-	cmd := exec.Command("ovs-vsctl", "list", "Mirror")
+	// 查询网桥的镜像配置
+	cmd := exec.Command("ovs-vsctl", "get", "Bridge", bridge, "mirrors")
 	output, err := cmd.Output()
+	if err != nil {
+		// 如果网桥不存在或没有镜像配置，返回空字符串
+		if err.Error() == "exit status 1" {
+			return "", nil
+		}
+		return "", err
+	}
+	
+	// 如果没有镜像配置，返回空字符串
+	outputStr := string(output)
+	if outputStr == "[]" || outputStr == "" || outputStr == "\n" || outputStr == "[]\n" {
+		return "", nil
+	}
+	
+	// 如果有镜像配置，查询镜像的详细信息
+	// 使用find命令查找所有镜像
+	cmd = exec.Command("ovs-vsctl", "find", "Mirror")
+	output, err = cmd.Output()
 	if err != nil {
 		return "", err
 	}

@@ -7,7 +7,9 @@ import (
 )
 
 type Response struct {
-	Name string `json:"name"`
+	Name      string `json:"name"`
+	PortCount int    `json:"portCount"`
+	Status    string `json:"status"`
 }
 
 // ListBridges 调用 ovs-vsctl 列出所有 bridge
@@ -22,9 +24,17 @@ func ListBridges() ([]Response, error) {
 	datas := strings.Split(string(output), "\n")
 	for _, s := range datas {
 		if s != "" {
-			data = append(data, Response{Name: s})
+			// 获取端口数
+			portCount := getBridgePortCount(s)
+			// 获取bridge状态
+			status := getBridgeStatus(s)
+			
+			data = append(data, Response{
+				Name:      s,
+				PortCount: portCount,
+				Status:    status,
+			})
 		}
-
 	}
 
 	return data, nil
@@ -458,4 +468,96 @@ func GetQos(bridgeName, portName string) (map[string]interface{}, error) {
 	}
 	
 	return config, nil
+}
+
+// getBridgePortCount 获取bridge的端口数
+func getBridgePortCount(bridgeName string) int {
+	cmd := exec.Command("ovs-vsctl", "list-ports", bridgeName)
+	output, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+
+	ports := strings.Split(string(output), "\n")
+	count := 0
+	for _, port := range ports {
+		if strings.TrimSpace(port) != "" {
+			count++
+		}
+	}
+	return count
+}
+
+// getBridgeStatus 获取bridge的状态
+func getBridgeStatus(bridgeName string) string {
+	// 检查bridge是否存在且可访问
+	cmd := exec.Command("ovs-vsctl", "br-exists", bridgeName)
+	err := cmd.Run()
+	if err != nil {
+		return "down"
+	}
+
+	// 检查bridge是否有端口
+	portCount := getBridgePortCount(bridgeName)
+	if portCount == 0 {
+		return "empty"
+	}
+
+	// 检查bridge是否正常运行 - 通过检查datapath_id来判断
+	cmd = exec.Command("ovs-vsctl", "get", "Bridge", bridgeName, "datapath_id")
+	output, err := cmd.Output()
+	if err != nil {
+		return "unknown"
+	}
+
+	datapathID := strings.TrimSpace(string(output))
+	if datapathID == "[]" || datapathID == "" {
+		return "down"
+	}
+
+	// 检查bridge是否有活跃的端口
+	cmd = exec.Command("ovs-vsctl", "list-ports", bridgeName)
+	output, err = cmd.Output()
+	if err != nil {
+		return "unknown"
+	}
+
+	ports := strings.Split(string(output), "\n")
+	activePorts := 0
+	for _, port := range ports {
+		port = strings.TrimSpace(port)
+		if port != "" {
+			// 检查端口状态
+			if isPortUp(port) {
+				activePorts++
+			}
+		}
+	}
+
+	if activePorts == 0 {
+		return "down"
+	}
+
+	return "up"
+}
+
+// isPortUp 检查端口是否处于up状态
+func isPortUp(portName string) bool {
+	// 使用ip link show命令检查端口状态
+	cmd := exec.Command("ip", "link", "show", portName)
+	output, err := cmd.Output()
+	if err != nil {
+		// 如果命令失败，尝试使用ovs-vsctl检查
+		cmd = exec.Command("ovs-vsctl", "get", "Interface", portName, "admin_state")
+		output, err = cmd.Output()
+		if err != nil {
+			return false
+		}
+		adminState := strings.TrimSpace(string(output))
+		return adminState == "up"
+	}
+
+	// 检查输出中是否包含 "UP" 状态
+	outputStr := string(output)
+	return strings.Contains(outputStr, "UP")
 }

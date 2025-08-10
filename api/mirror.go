@@ -6,6 +6,30 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetMirrorsHandler 获取端口镜像列表接口 (GET请求)
+// @Summary 获取端口镜像列表
+// @Description 获取指定网桥的端口镜像列表
+// @Tags OVS-Mirror
+// @Accept json
+// @Produce json
+// @Param bridge query string true "网桥名称"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/ovs/mirror [get]
+func GetMirrorsHandler(c *gin.Context) {
+	bridge := c.Query("bridge")
+	if bridge == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bridge parameter is required"})
+		return
+	}
+	
+	output, err := service.ListMirrors(bridge)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"output": output})
+}
+
 // AddMirrorHandler 新增端口镜像接口
 // @Summary 新增端口镜像
 // @Description 新增端口镜像
